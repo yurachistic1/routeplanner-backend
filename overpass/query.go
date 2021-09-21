@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -66,11 +67,12 @@ type Member struct {
 }
 
 // Query returns a Response value and an error.
-// Api argument has to be of the form: address/api/interpreter?data=
-// Query argument has to be an overpass QL statement.
+// Api argument has to be of the form: address/api/interpreter?data= .
+// Query argument has to be an overpass QL statement with output format
+//specified as JSON.
 func Query(api string, query string) (response Response, err error) {
 
-	res, err := http.Get(api + query)
+	res, err := http.Get(api + url.QueryEscape(query))
 
 	if err != nil {
 		return
@@ -94,8 +96,9 @@ func Query(api string, query string) (response Response, err error) {
 //
 // In a standard Overpass QL program, a bounding box is constructed with
 //two decimal degree coordinate pairs in ISO 6709 standard order and format,
-//and each value is separated with a comma. The values are, in order: southern-most latitude,
-//western-most longitude, northern-most latitude, eastern-most longitude.
+//and each value is separated with a comma. The values are, in order:
+//southern-most latitude, western-most longitude, northern-most latitude,
+//eastern-most longitude.
 func BBox(lat float64, lon float64, side float64) (bbox string) {
 	south := lat - ((side / 2) / 111.32)
 	north := lat + ((side / 2) / 111.32)
