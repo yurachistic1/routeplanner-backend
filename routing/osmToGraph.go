@@ -3,6 +3,8 @@
 package routing
 
 import (
+	"fmt"
+
 	"github.com/yurachistic1/routeplanner-backend/overpass"
 )
 
@@ -32,14 +34,14 @@ func OSMToGraph(res overpass.Response) (graph Graph) {
 
 	for _, way := range elementsGrouped.Ways {
 		if len(way.Nodes) > 1 {
-			for i := 0; i < len(way.Nodes)-1; i += 2 {
+			for i := 0; i < len(way.Nodes)-1; i += 1 {
 				var n1 *Node = graph[Id(way.Nodes[i])]
 				var n2 *Node = graph[Id(way.Nodes[i+1])]
 
 				graph[n1.Id].Adjacent = append(graph[n1.Id].Adjacent, n2.Id)
 				graph[n1.Id].Edges[n2.Id] = Edge{haversine(n1, n2), bearing(n1, n2)}
 
-				graph[n2.Id].Adjacent = append(graph[n1.Id].Adjacent, n1.Id)
+				graph[n2.Id].Adjacent = append(graph[n2.Id].Adjacent, n1.Id)
 				graph[n2.Id].Edges[n1.Id] = Edge{haversine(n1, n2), bearing(n2, n1)}
 
 			}
@@ -97,5 +99,14 @@ func (graph *Graph) removeDeadEnds() {
 // ToPolyline converts graph to code that can be used to draw a polyline with leaflet js
 // library. For testing purposes only.
 func (graph *Graph) ToPolyline() string {
-	return ""
+
+	str := "var latlngs = [\n"
+
+	for _, val := range *graph {
+		for _, id := range val.Adjacent {
+			coordpair := fmt.Sprintf("[[%f, %f], [%f, %f]],\n", val.Lat, val.Lon, (*graph)[id].Lat, (*graph)[id].Lon)
+			str += coordpair
+		}
+	}
+	return str + "]"
 }
