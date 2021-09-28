@@ -1,5 +1,7 @@
 package routing
 
+import "fmt"
+
 // Unique id identifying nodes
 type Id int
 
@@ -21,4 +23,15 @@ type Node struct {
 type Edge struct {
 	distance float64
 	bearing  float64
+}
+
+func (g Graph) String() string {
+	str := ""
+
+	for key, elem := range g {
+		str += fmt.Sprintf("%d: %+v\n", key, *elem)
+	}
+
+	return str
+
 }
