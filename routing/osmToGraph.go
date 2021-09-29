@@ -18,6 +18,7 @@ func OSMToGraph(res overpass.Response) (graph Graph) {
 		Ways  []overpass.Element
 	}{[]overpass.Element{}, []overpass.Element{}}
 
+	// group elements
 	for _, element := range res.Elements {
 		switch element.Type {
 		case "way":
@@ -27,11 +28,13 @@ func OSMToGraph(res overpass.Response) (graph Graph) {
 		}
 	}
 
+	// insert all the nodes into the graph
 	for _, node := range elementsGrouped.Nodes {
 		graph[Id(node.Id)] =
 			&Node{Id(node.Id), node.Lat, node.Lon, []Id{}, make(map[Id]Edge)}
 	}
 
+	// connect all the nodes
 	for _, way := range elementsGrouped.Ways {
 		if len(way.Nodes) > 1 {
 			for i := 0; i < len(way.Nodes)-1; i += 1 {
@@ -104,7 +107,8 @@ func (graph *Graph) ToPolyline() string {
 
 	for _, val := range *graph {
 		for _, id := range val.Adjacent {
-			coordpair := fmt.Sprintf("[[%f, %f], [%f, %f]],\n", val.Lat, val.Lon, (*graph)[id].Lat, (*graph)[id].Lon)
+			coordpair := fmt.Sprintf("[[%f, %f], [%f, %f]],\n",
+				val.Lat, val.Lon, (*graph)[id].Lat, (*graph)[id].Lon)
 			str += coordpair
 		}
 	}
