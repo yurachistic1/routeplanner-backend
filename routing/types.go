@@ -1,6 +1,8 @@
 package routing
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Unique id identifying nodes
 type Id int
@@ -31,6 +33,8 @@ type Route struct {
 	Turns  int
 }
 
+type Routes []Route
+
 func (g Graph) String() string {
 	str := ""
 
@@ -40,4 +44,25 @@ func (g Graph) String() string {
 
 	return str
 
+}
+
+func (routes Routes) Len() int {
+	return len(routes)
+}
+
+func (routes Routes) Swap(i, j int) {
+	routes[i], routes[j] = routes[j], routes[i]
+}
+
+func (routes Routes) Less(i, j int) bool {
+
+	//return routes[i].Turns < routes[j].Turns
+
+	turnsI := routes[i].Turns
+	dFromStartI := haversine(routes[i].Path[0], routes[i].Path[len(routes[i].Path)-1])
+
+	turnsJ := routes[j].Turns
+	dFromStartJ := haversine(routes[j].Path[0], routes[j].Path[len(routes[j].Path)-1])
+
+	return (float64(turnsI)*50 + dFromStartI) < (float64(turnsJ)*50 + dFromStartJ)
 }
