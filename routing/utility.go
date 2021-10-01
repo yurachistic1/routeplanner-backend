@@ -2,7 +2,7 @@ package routing
 
 import "math"
 
-// Haversine calculates haversine distance between two nodes.
+// Haversine calculates haversine distance between two nodes in meters.
 func haversine(n1, n2 *Node) float64 {
 	const earthRadius = 6371000 // meters
 	// lat lon in radians
@@ -17,7 +17,7 @@ func haversine(n1, n2 *Node) float64 {
 	return d
 }
 
-// Bearing calculates bearing in degrees between two nodes.
+// Bearing calculates bearing in degrees between two nodes. Range 0 ... 360.
 func bearing(n1, n2 *Node) float64 {
 	// lat lon in radians
 	lat1Rad := n1.Lat * math.Pi / 180
@@ -33,4 +33,30 @@ func bearing(n1, n2 *Node) float64 {
 	bearingDeg := math.Mod((bearingRad*180/math.Pi + 360), 360) // in degrees
 
 	return bearingDeg
+}
+
+// BearingDifference calculates difference between two bearings in degrees.
+// Return value is in the range between 0 and 180.
+func bearingDifference(b1, b2 float64) float64 {
+	d1 := b1 - b2
+	d2 := b2 - b1
+
+	if d1 < 0 {
+		d1 += 360
+	}
+
+	if d2 < 0 {
+		d2 += 360
+	}
+
+	if d1 < d2 {
+		return d1
+	} else {
+		return d2
+	}
+}
+
+// SectorAngle returns angle of a sector given length of the sector arc.
+func sectorAngle(arcL, radius float64) float64 {
+	return (arcL / (math.Pi * 2 * radius)) * 360
 }

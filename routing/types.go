@@ -21,8 +21,14 @@ type Node struct {
 
 // Edge stores infomation on distance and and bearing between two nodes.
 type Edge struct {
-	distance float64
-	bearing  float64
+	Distance float64
+	Bearing  float64
+}
+
+type Route struct {
+	Path   []*Node
+	Length float64
+	Turns  int
 }
 
 func (g Graph) String() string {
