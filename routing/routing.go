@@ -25,7 +25,7 @@ func CreateRoute(lat, lon, distance float64, g Graph) Route {
 			previousNode = route.Path[len(route.Path)-2].Id
 		}
 
-		nextId := pickAlongBearing(b, currentNode.Edges, previousNode)
+		nextId, _ := pickAlongBearing(b, currentNode.Edges, previousNode)
 
 		route.Path = append(route.Path, g[nextId])
 		route.Length += currentNode.Edges[nextId].Distance
@@ -38,9 +38,9 @@ func CreateRoute(lat, lon, distance float64, g Graph) Route {
 	return route
 }
 
-// PickAlongBearing selects a an edge (connected node id) that lies closest
-// to the line drawn by target bearing.
-func pickAlongBearing(target float64, vals map[Id]Edge, exclude Id) (closest Id) {
+// PickAlongBearing selects a an edge (connected node id) that has the closest bearing
+// to the target bearing and returns a boolean indicating whether it was a turn or not.
+func pickAlongBearing(target float64, vals map[Id]Edge, exclude Id) (closest Id, turned bool) {
 
 	minDifference := math.MaxFloat64
 
@@ -54,6 +54,7 @@ func pickAlongBearing(target float64, vals map[Id]Edge, exclude Id) (closest Id)
 		if difference < minDifference {
 			closest = key
 			minDifference = difference
+			turned = difference > 80
 		}
 	}
 
