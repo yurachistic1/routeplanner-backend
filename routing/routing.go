@@ -5,34 +5,40 @@ import (
 	"math"
 )
 
-func CreateRoute(lat, lon, distance float64, g Graph) Route {
+func CreateRoute(lat, lon, distance, initBearing float64, g Graph) Route {
 	start := closestNode(lat, lon, g)
-
-	fmt.Println(start)
 
 	route := Route{Path: []*Node{g[start]}, Length: 0, Turns: 0}
 
-	var b float64 = 0
+	var b float64 = initBearing
 	var r float64 = distance / (2 * math.Pi)
+
+	// vars to figure out if next node counts as a turn or not
+	var currentBearing float64
+	var newBearing float64
 
 	for route.Length < distance {
 		previousNode := Id(-1)
 		currentNode := route.Path[len(route.Path)-1]
 
-		fmt.Printf("%+v\n", currentNode)
-
 		if len(route.Path) > 1 {
 			previousNode = route.Path[len(route.Path)-2].Id
+			currentBearing = g[previousNode].Edges[currentNode.Id].Bearing
+
 		}
 
-		nextId, _ := pickAlongBearing(b, currentNode.Edges, previousNode)
+		nextId := pickAlongBearing(b, currentNode.Edges, previousNode)
 
 		route.Path = append(route.Path, g[nextId])
 		route.Length += currentNode.Edges[nextId].Distance
 
-		fmt.Println(route.Length, r)
-		fmt.Println(sectorAngle(route.Length, r))
-		b = math.Mod(sectorAngle(route.Length, r), 360)
+		newBearing = g[currentNode.Id].Edges[nextId].Bearing
+
+		if len(route.Path) > 1 && bearingDifference(currentBearing, newBearing) > 80 {
+			route.Turns++
+		}
+
+		b = math.Mod(sectorAngle(route.Length, r)+initBearing, 360)
 	}
 
 	return route
@@ -40,7 +46,7 @@ func CreateRoute(lat, lon, distance float64, g Graph) Route {
 
 // PickAlongBearing selects a an edge (connected node id) that has the closest bearing
 // to the target bearing and returns a boolean indicating whether it was a turn or not.
-func pickAlongBearing(target float64, vals map[Id]Edge, exclude Id) (closest Id, turned bool) {
+func pickAlongBearing(target float64, vals map[Id]Edge, exclude Id) (closest Id) {
 
 	minDifference := math.MaxFloat64
 
@@ -54,7 +60,6 @@ func pickAlongBearing(target float64, vals map[Id]Edge, exclude Id) (closest Id,
 		if difference < minDifference {
 			closest = key
 			minDifference = difference
-			turned = difference > 80
 		}
 	}
 

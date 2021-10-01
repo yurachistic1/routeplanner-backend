@@ -24,21 +24,20 @@ func TestPickAlongBearing(t *testing.T) {
 		target  float64
 		exclude Id
 		want    Id
-		turned  bool
 	}{
-		{nodeA, 0, -1, 3, false},
-		{nodeA, 0, 3, 2, true},
-		{nodeB, 330, -1, 3, false},
-		{nodeB, 330, 3, 5, false},
+		{nodeA, 0, -1, 3},
+		{nodeA, 0, 3, 2},
+		{nodeB, 330, -1, 3},
+		{nodeB, 330, 3, 5},
 	}
 
 	for _, c := range cases {
 
-		result, turn := pickAlongBearing(c.target, c.in.Edges, c.exclude)
+		result := pickAlongBearing(c.target, c.in.Edges, c.exclude)
 
 		if result != c.want {
-			t.Errorf("pickAlongBearing(%v, %v, %v) == %v, %v, want %v, %v",
-				c.target, c.in.Edges, c.exclude, result, turn, c.want, c.turned)
+			t.Errorf("pickAlongBearing(%v, %v, %v) == %v, want %v",
+				c.target, c.in.Edges, c.exclude, result, c.want)
 		}
 	}
 }
