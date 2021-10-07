@@ -60,3 +60,35 @@ func bearingDifference(b1, b2 float64) float64 {
 func sectorAngle(arcL, radius float64) float64 {
 	return (arcL / (math.Pi * 2 * radius)) * 360
 }
+
+// RouteSimilarity estimates percent of nodes in the shorter route that are
+// shared with the longer route.
+func routeSimilarity(r1, r2 Route) (percentSimilar int) {
+	nodes := make(map[Id]struct{})
+
+	var longer []*Node
+	var shorter []*Node
+	var overlapCount int = 0
+
+	if len(r1.Path) > len(r2.Path) {
+		longer = r1.Path
+		shorter = r2.Path
+	} else {
+		longer = r2.Path
+		shorter = r1.Path
+	}
+
+	for _, val := range longer {
+		nodes[val.Id] = struct{}{}
+	}
+
+	for _, val := range shorter {
+		_, ok := nodes[val.Id]
+
+		if ok {
+			overlapCount++
+		}
+	}
+
+	return overlapCount / len(shorter)
+}
