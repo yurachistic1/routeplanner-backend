@@ -4,6 +4,15 @@ import (
 	"fmt"
 )
 
+// Rotation enum type
+type Rotation int
+
+// Rotation option
+const (
+	Clockwise Rotation = iota
+	Anticlockwise
+)
+
 // Unique id identifying nodes
 type Id int
 
