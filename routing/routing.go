@@ -6,13 +6,14 @@ import (
 	"math/rand"
 )
 
-func CreateRoute(start *Node, distance, initBearing float64, g Graph) Route {
+// Create route returns a circular Route of desired distance at a specified start location.
+func CreateRoute(start *Node, distance, initBearing float64, g Graph, rot Rotation) Route {
 
 	route := Route{Path: make([]*Node, 1, 1000), Length: 0, Turns: 0}
 	route.Path[0] = start
 
 	var b float64 = initBearing
-	var r float64 = distance / (2 * math.Pi)
+	var radius float64 = distance / (2 * math.Pi)
 
 	// vars to figure out if next node counts as a turn or not
 	var currentBearing float64 = initBearing
@@ -49,7 +50,12 @@ func CreateRoute(start *Node, distance, initBearing float64, g Graph) Route {
 			route.Turns++
 		}
 
-		b = math.Mod(sectorAngle(route.Length, r)+initBearing, 360)
+		switch rot {
+		case Clockwise:
+			b = math.Mod(sectorAngle(route.Length, radius)+initBearing, 360)
+		case Anticlockwise:
+			b = math.Mod((-sectorAngle(route.Length, radius)+initBearing)+360, 360)
+		}
 	}
 
 	return route
