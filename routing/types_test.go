@@ -124,7 +124,7 @@ func TestRemoveDeadEnds(t *testing.T) {
 
 		original := c.in
 
-		c.in.removeDeadEnds()
+		c.in.RemoveDeadEnds()
 
 		if !reflect.DeepEqual(c.in, c.want) {
 			t.Errorf("%v.removeDeadEnds() == %v, want %v", original, c.in, c.want)

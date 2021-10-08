@@ -3,7 +3,7 @@ package routing
 import "math"
 
 // Haversine calculates haversine distance between two nodes in meters.
-func haversine(n1, n2 *Node) float64 {
+func Haversine(n1, n2 *Node) float64 {
 	const earthRadius = 6371000 // meters
 	// lat lon in radians
 	lat1Rad := n1.Lat * math.Pi / 180
@@ -18,7 +18,7 @@ func haversine(n1, n2 *Node) float64 {
 }
 
 // Bearing calculates bearing in degrees between two nodes. Range 0 ... 360.
-func bearing(n1, n2 *Node) float64 {
+func Bearing(n1, n2 *Node) float64 {
 	// lat lon in radians
 	lat1Rad := n1.Lat * math.Pi / 180
 	lat2Rad := n2.Lat * math.Pi / 180

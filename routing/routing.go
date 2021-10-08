@@ -1,16 +1,14 @@
+// Package routing provides functions to navigate on and process
+// graphs in the context of routeplanner project.
 package routing
 
 import (
 	"fmt"
 	"math"
 	"math/rand"
-
-	"github.com/yurachistic1/routeplanner-backend/overpass"
 )
 
-func TopRoutes(lat, lon, distance float64, res overpass.Response) Routes {
-
-	graph := OSMToGraph(res)
+func TopRoutes(lat, lon, distance float64, graph Graph) Routes {
 
 	start := ClosestNode(lat, lon, graph)
 
@@ -173,7 +171,7 @@ func ClosestNode(lat float64, lon float64, g Graph) (closest *Node) {
 	minDistance := math.MaxFloat64
 
 	for _, val := range g {
-		distance := haversine(&target, val)
+		distance := Haversine(&target, val)
 
 		if distance < minDistance {
 			minDistance = distance
