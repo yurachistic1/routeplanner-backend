@@ -90,5 +90,5 @@ func routeSimilarity(r1, r2 Route) (percentSimilar int) {
 		}
 	}
 
-	return overlapCount / len(shorter)
+	return overlapCount * 100 / len(shorter)
 }
