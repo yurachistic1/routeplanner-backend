@@ -1,4 +1,4 @@
-package main
+package routeplanner
 
 import (
 	"github.com/yurachistic1/routeplanner-backend/overpass"
