@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/schema"
+
 	"github.com/yurachistic1/routeplanner-backend/overpass"
 	"github.com/yurachistic1/routeplanner-backend/routing"
 )
@@ -63,9 +65,38 @@ out;
 out skel qt;
 `
 
+type CoordPair struct {
+	Lat float64 `json:"lat"`
+	Lon float64 `json:"lon"`
+}
+
+type Route struct {
+	Path     []CoordPair
+	Distance float64
+}
+
+type Responce []Route
+
+type Request struct {
+	Lat      float64 `schema:"lat,required"`
+	Lon      float64 `schema:"lon,required"`
+	Distance float64 `schema:"distance,required"`
+}
+
 func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 
-	bbox := overpass.BBox(51.5211374, -0.1516939, 4)
+	var decoder = schema.NewDecoder()
+
+	// Parse the request from query string
+	var req Request
+	if err := decoder.Decode(&req, r.URL.Query()); err != nil {
+		// Report any parsing errors
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		fmt.Fprintf(w, "Error: %s", err)
+		return
+	}
+
+	bbox := overpass.BBox(req.Lat, req.Lon, req.Distance*0.8)
 
 	res, err := overpass.Query(overpass.KumiSys, bbox+query)
 
@@ -77,12 +108,27 @@ func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 
 	graph := OSMToGraph(res)
 
-	routes := routing.TopRoutes(51.5211374, -0.1516939, 5000, graph)
+	routes := routing.TopRoutes(req.Lat, req.Lon, req.Distance*1000, graph)
 
 	// Send response back to client as JSON
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	response := routes
+	response := routesToResponce(routes)
 	if err := json.NewEncoder(w).Encode(&response); err != nil {
-		panic(err)
+		return
 	}
+}
+
+func routesToResponce(routes routing.Routes) (res Responce) {
+
+	for _, val := range routes {
+		route := Route{Path: []CoordPair{}, Distance: val.Length}
+		for _, node := range val.Path {
+			route.Path = append(route.Path, CoordPair{node.Lat, node.Lon})
+		}
+
+		res = append(res, route)
+	}
+
+	return
 }

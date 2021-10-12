@@ -4,6 +4,7 @@ package overpass
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -14,12 +15,12 @@ import (
 
 // Public Overpass API instance
 const (
-	Main    = "https://lz4.overpass-api.de/api/interpreter?data="
-	Russian = "https://overpass.openstreetmap.ru/api/interpreter?data="
-	French  = "https://overpass.openstreetmap.fr/api/interpreter?data="
-	Swiss   = "https://overpass.osm.ch/api/interpreter?data="
-	KumiSys = "https://overpass.kumi.systems/api/interpreter?data="
-	Taiwan  = "https://overpass.nchc.org.tw/api/interpreter?data="
+	Main    = "https://lz4.overpass-api.de/api/interpreter"
+	Russian = "https://overpass.openstreetmap.ru/api/interpreter"
+	French  = "https://overpass.openstreetmap.fr/api/interpreter"
+	Swiss   = "https://overpass.osm.ch/api/interpreter"
+	KumiSys = "https://overpass.kumi.systems/api/interpreter"
+	Taiwan  = "https://overpass.nchc.org.tw/api/interpreter"
 )
 
 // Response represents OSM data in JSON format as specified at
@@ -67,18 +68,29 @@ type Member struct {
 }
 
 // Query returns a Response value and an error.
-// Api argument has to be of the form: address/api/interpreter?data= .
+// Api argument has to be of the form: address/api/interpreter.
 // Query argument has to be an overpass QL statement with output format
 //specified as JSON.
 func Query(api string, query string) (response Response, err error) {
 
-	res, err := http.Get(api + url.QueryEscape(query))
+	overpassClient := http.Client{
+		Timeout: time.Second * 60,
+	}
+
+	res, err := overpassClient.PostForm(
+		api,
+		url.Values{"data": []string{query}},
+	)
 
 	if err != nil {
 		return
 	}
 
 	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		return response, errors.New("overpass api error")
+	}
 
 	data, err := ioutil.ReadAll(res.Body)
 
