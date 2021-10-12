@@ -65,14 +65,11 @@ out;
 out skel qt;
 `
 
-type CoordPair struct {
-	Lat float64 `json:"lat"`
-	Lon float64 `json:"lon"`
-}
+type CoordPair [2]float64
 
 type Route struct {
-	Path     []CoordPair
-	Distance float64
+	Path     []CoordPair `json:"path"`
+	Distance float64     `json:"distance"`
 }
 
 type Responce []Route
