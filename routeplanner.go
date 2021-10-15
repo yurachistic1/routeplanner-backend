@@ -2,6 +2,7 @@ package routeplanner
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -80,19 +81,26 @@ type Request struct {
 	Distance float64 `schema:"distance,required"`
 }
 
+// Handler function that is invoked by GCP.
 func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 
 	var decoder = schema.NewDecoder()
 
-	// Parse the request from query string
+	// Parse the request from query string and report any parsing errors
 	var req Request
 	if err := decoder.Decode(&req, r.URL.Query()); err != nil {
-		// Report any parsing errors
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		fmt.Fprintf(w, "Error: %s", err)
 		return
 	}
 
+	// validate distance
+	if req.Distance < 1 || req.Distance > 10 {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		fmt.Fprintf(w, "Error: %s", errors.New("invalid distance"))
+	}
+
+	// request data from overpass api
 	bbox := overpass.BBox(req.Lat, req.Lon, req.Distance*0.8)
 
 	res, err := overpass.Query(overpass.KumiSys, bbox+query)
@@ -103,6 +111,7 @@ func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// process and calculate routes
 	graph := OSMToGraph(res)
 
 	routes := routing.TopRoutes(req.Lat, req.Lon, req.Distance*1000, graph)
@@ -118,6 +127,8 @@ func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// RoutesToResponse takes a routing.Routes object and condenses it to the most
+// essential data needed in the server response.
 func routesToResponce(routes routing.Routes) (res Responce) {
 
 	for _, val := range routes {
