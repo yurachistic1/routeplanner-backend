@@ -78,7 +78,15 @@ func appendRoute(route Route, routes Routes) Routes {
 // Create route returns a circular Route of desired distance at a specified start location.
 func createRoute(start *Node, distance, initBearing float64, g Graph, rot Rotation) Route {
 
-	route := Route{Path: make([]*Node, 1, 1000), Length: 0, Turns: 0}
+	route := Route{
+		Path:          make([]*Node, 1, 1000),
+		Length:        0,
+		DesiredLength: distance,
+		Visited:       make(map[Id]int),
+		RepeatVisits:  0,
+		Turns:         0,
+	}
+
 	route.Path[0] = start
 
 	var b float64 = initBearing
@@ -90,8 +98,14 @@ func createRoute(start *Node, distance, initBearing float64, g Graph, rot Rotati
 
 	var previousNode *Node = &Node{Id: -1}
 
-	for route.Length < distance {
+	for route.Length < distance*0.98 {
 		currentNode := route.Path[len(route.Path)-1]
+
+		route.Visited[currentNode.Id] += 1
+
+		if route.Visited[currentNode.Id] > 1 {
+			route.RepeatVisits += 1
+		}
 
 		if len(route.Path) > 1 {
 			previousNode = route.Path[len(route.Path)-2]

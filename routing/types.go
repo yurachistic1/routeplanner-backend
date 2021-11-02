@@ -2,6 +2,7 @@ package routing
 
 import (
 	"fmt"
+	"math"
 )
 
 // Rotation enum type
@@ -60,22 +61,6 @@ func (graph *Graph) RemoveDeadEnds() {
 	}
 }
 
-// ToPolyline converts graph to code that can be used to draw a polyline with leaflet js
-// library. For testing purposes only.
-func (graph *Graph) ToPolyline() string {
-
-	str := "var latlngs = [\n"
-
-	for _, val := range *graph {
-		for _, id := range val.Adjacent {
-			coordpair := fmt.Sprintf("[[%f, %f], [%f, %f]],\n",
-				val.Lat, val.Lon, (*graph)[id].Lat, (*graph)[id].Lon)
-			str += coordpair
-		}
-	}
-	return str + "]"
-}
-
 // Node represents a vertex with latitude and longitude and stores a list of
 // edges connected to it.
 type Node struct {
@@ -107,10 +92,15 @@ type Edge struct {
 	Bearing  float64
 }
 
+// Route type stores information describing a route such as ordered slice of nodes that
+// route, its length, number of turns and others.
 type Route struct {
-	Path   []*Node
-	Length float64
-	Turns  int
+	Path          []*Node
+	Length        float64
+	DesiredLength float64
+	Visited       map[Id]int
+	RepeatVisits  int
+	Turns         int
 }
 
 type Routes []Route
@@ -125,13 +115,19 @@ func (routes Routes) Swap(i, j int) {
 
 func (routes Routes) Less(i, j int) bool {
 
-	//return routes[i].Turns < routes[j].Turns
-
-	turnsI := routes[i].Turns
+	turnsI := routes[i].Turns * 10
 	dFromStartI := Haversine(routes[i].Path[0], routes[i].Path[len(routes[i].Path)-1])
+	distanceDiffI := math.Abs(routes[i].DesiredLength - routes[i].Length)
+	repeatsI := routes[i].RepeatVisits
 
-	turnsJ := routes[j].Turns
+	iScore := dFromStartI/10 + float64(turnsI) + float64(repeatsI) + distanceDiffI
+
+	turnsJ := routes[j].Turns * 10
 	dFromStartJ := Haversine(routes[j].Path[0], routes[j].Path[len(routes[j].Path)-1])
+	distanceDiffJ := math.Abs(routes[j].DesiredLength - routes[j].Length)
+	repeatsJ := routes[j].RepeatVisits
 
-	return (float64(turnsI)*50 + dFromStartI) < (float64(turnsJ)*50 + dFromStartJ)
+	jScore := dFromStartJ/10 + float64(turnsJ) + float64(repeatsJ) + distanceDiffJ
+
+	return iScore < jScore
 }
