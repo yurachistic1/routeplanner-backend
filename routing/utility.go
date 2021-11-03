@@ -64,31 +64,24 @@ func sectorAngle(arcL, radius float64) float64 {
 // RouteSimilarity estimates percent of nodes in the shorter route that are
 // shared with the longer route.
 func routeSimilarity(r1, r2 Route) (percentSimilar int) {
-	nodes := make(map[Id]struct{})
 
-	var longer []*Node
-	var shorter []*Node
+	var short, long map[Id]int
 	var overlapCount int = 0
 
-	if len(r1.Path) > len(r2.Path) {
-		longer = r1.Path
-		shorter = r2.Path
+	if len(r1.Visited) < len(r2.Visited) {
+		short, long = r1.Visited, r2.Visited
 	} else {
-		longer = r2.Path
-		shorter = r1.Path
+		short, long = r2.Visited, r1.Visited
 	}
 
-	for _, val := range longer {
-		nodes[val.Id] = struct{}{}
-	}
-
-	for _, val := range shorter {
-		_, ok := nodes[val.Id]
+	for key, _ := range short {
+		_, ok := long[key]
 
 		if ok {
 			overlapCount++
 		}
 	}
 
-	return overlapCount * 100 / len(shorter)
+	return (100 * overlapCount) / len(long)
+
 }
