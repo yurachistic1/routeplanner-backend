@@ -12,19 +12,19 @@ func TopRoutes(lat, lon, distance float64, graph Graph) Routes {
 
 	start := ClosestNode(lat, lon, graph)
 
-	top25 := make(Routes, 0, 25)
+	top := make(Routes, 0, 25)
 
-	for i := 0; i < 360; i += 15 {
+	for i := 0; i < 360; i += 10 {
 
-		for j := 0; j < 50; j++ {
+		for j := 0; j < 30; j++ {
 			r1 := createRoute(start, distance, float64(i), graph, Clockwise)
-			top25 = appendRoute(r1, top25)
+			top = appendRoute(r1, top)
 			r2 := createRoute(start, distance, float64(i), graph, Anticlockwise)
-			top25 = appendRoute(r2, top25)
+			top = appendRoute(r2, top)
 		}
 	}
 
-	return top25
+	return top
 }
 
 func appendRoute(route Route, routes Routes) Routes {
@@ -44,9 +44,9 @@ func appendRoute(route Route, routes Routes) Routes {
 	for i := 0; i < len(routes); i++ {
 		similarity := routeSimilarity(route, routes[i])
 
-		if similarity > 80 {
-			pair := Routes{routes[i], route}
-			if pair.Less(1, 0) {
+		if similarity > 70 {
+			pair := Routes{route, routes[i]}
+			if pair.Less(0, 1) {
 				routes[i] = route
 
 			}
@@ -129,7 +129,7 @@ func createRoute(start *Node, distance, initBearing float64, g Graph, rot Rotati
 
 		newBearing = (g)[currentNode.Id].Edges[choices[pick]].Bearing
 
-		if len(route.Path) > 1 && bearingDifference(currentBearing, newBearing) > 80 {
+		if len(route.Path) > 1 && bearingDifference(currentBearing, newBearing) > 45 {
 			route.Turns++
 		}
 
