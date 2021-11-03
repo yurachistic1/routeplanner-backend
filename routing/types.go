@@ -115,19 +115,19 @@ func (routes Routes) Swap(i, j int) {
 
 func (routes Routes) Less(i, j int) bool {
 
-	turnsI := routes[i].Turns * 10
+	turnsI := routes[i].Turns * 20
 	dFromStartI := Haversine(routes[i].Path[0], routes[i].Path[len(routes[i].Path)-1])
 	distanceDiffI := math.Abs(routes[i].DesiredLength - routes[i].Length)
-	repeatsI := routes[i].RepeatVisits
+	repeatsI := (routes[i].RepeatVisits * 1000) / len(routes[i].Path)
 
-	iScore := dFromStartI/10 + float64(turnsI) + float64(repeatsI) + distanceDiffI
+	iScore := dFromStartI + float64(turnsI) + float64(repeatsI) + distanceDiffI
 
-	turnsJ := routes[j].Turns * 10
+	turnsJ := routes[j].Turns * 20
 	dFromStartJ := Haversine(routes[j].Path[0], routes[j].Path[len(routes[j].Path)-1])
 	distanceDiffJ := math.Abs(routes[j].DesiredLength - routes[j].Length)
-	repeatsJ := routes[j].RepeatVisits
+	repeatsJ := (routes[j].RepeatVisits * 1000) / len(routes[j].Path)
 
-	jScore := dFromStartJ/10 + float64(turnsJ) + float64(repeatsJ) + distanceDiffJ
+	jScore := dFromStartJ + float64(turnsJ) + float64(repeatsJ) + distanceDiffJ
 
 	return iScore < jScore
 }
