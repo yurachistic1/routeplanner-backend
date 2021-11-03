@@ -17,6 +17,7 @@ const query = `
 [timeout:25]
 ;
 (
+(
   (
 	(
 	  (
@@ -49,6 +50,9 @@ const query = `
 );
 	-
 	way["tunnel"];
+);
+	- 
+	way["route"="ferry"];
 );
   -
   (
@@ -84,6 +88,11 @@ type Request struct {
 // Handler function that is invoked by GCP.
 func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*") //https://yurachistic1.github.io
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	var decoder = schema.NewDecoder()
 
 	// Parse the request from query string and report any parsing errors
@@ -117,9 +126,6 @@ func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 	routes := routing.TopRoutes(req.Lat, req.Lon, req.Distance*1000, graph)
 
 	// Send response back to client as JSON
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Header().Set("Access-Control-Allow-Origin", "https://yurachistic1.github.io")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.WriteHeader(http.StatusOK)
 	response := routesToResponce(routes)
 	if err := json.NewEncoder(w).Encode(&response); err != nil {
