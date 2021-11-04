@@ -11,17 +11,20 @@ import (
 
 func TopRoutes(lat, lon, distance float64, graph Graph) Routes {
 
-	start := ClosestNode(lat, lon, graph)
+	nodes := ClosestNodes(lat, lon, graph, 3)
 
 	top := make(Routes, 0, 25)
 
-	for i := 0; i < 360; i += 15 {
+	for _, start := range nodes {
 
-		for j := 0; j < 50; j++ {
-			r1 := createRoute(start, distance, float64(i), graph, Clockwise)
-			top = appendRoute(r1, top)
-			r2 := createRoute(start, distance, float64(i), graph, Anticlockwise)
-			top = appendRoute(r2, top)
+		for i := 0; i < 360; i += 20 {
+
+			for j := 0; j < 50; j++ {
+				r1 := createRoute(start, distance, float64(i), graph, Clockwise)
+				top = appendRoute(r1, top)
+				r2 := createRoute(start, distance, float64(i), graph, Anticlockwise)
+				top = appendRoute(r2, top)
+			}
 		}
 	}
 
@@ -185,19 +188,35 @@ func (r *Route) ToPolyline() string {
 	return str + "]"
 }
 
-// ClosestNode returns a node pointer with the shortest distance to given lat and lon coordinates.
-func ClosestNode(lat float64, lon float64, g Graph) (closest *Node) {
+// ClosestNode returns n closest node pointers to a given lat and lon coordinates.
+func ClosestNodes(lat float64, lon float64, g Graph, n int) (closest []*Node) {
+
+	closest = []*Node{}
 
 	target := Node{Lat: lat, Lon: lon}
-	minDistance := math.MaxFloat64
+	pairs := sortByD{}
 
 	for _, val := range g {
 		distance := Haversine(&target, val)
 
-		if distance < minDistance {
-			minDistance = distance
-			closest = val
-		}
+		pairs = append(pairs, pair{val, distance})
+	}
+
+	sort.Sort(pairs)
+
+	for i := 0; i < n; i++ {
+		closest = append(closest, pairs[i*5].n)
 	}
 	return closest
 }
+
+type pair struct {
+	n *Node
+	d float64
+}
+
+type sortByD []pair
+
+func (a sortByD) Len() int           { return len(a) }
+func (a sortByD) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a sortByD) Less(i, j int) bool { return a[i].d < a[j].d }
