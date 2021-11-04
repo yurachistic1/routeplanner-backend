@@ -4,7 +4,8 @@ import (
 	"math"
 )
 
-func reconstruct_path(cameFrom map[Id]Id, current Id) (totalPath []Id) {
+// Reconstruct Path returns the optimal path from current to the start node.
+func reconstructPath(cameFrom map[Id]Id, current Id) (totalPath []Id) {
 
 	totalPath = []Id{current}
 
@@ -20,7 +21,10 @@ func reconstruct_path(cameFrom map[Id]Id, current Id) (totalPath []Id) {
 	return
 }
 
-func a_star(path []*Node, graph Graph) []Id {
+// A* search is used to complete the routes into a cycle and is not an optimal implementation
+// lacking the use of a priority queue for the open set. For the purposes of the
+// project it is fast enough.
+func aStar(path []*Node, graph Graph) []Id {
 
 	goal := path[0]
 	start := path[len(path)-1]
@@ -47,7 +51,7 @@ func a_star(path []*Node, graph Graph) []Id {
 
 		current := minNode
 		if current == goal.Id {
-			return reconstruct_path(cameFrom, current)
+			return reconstructPath(cameFrom, current)
 		}
 
 		delete(openSet, current)
@@ -75,8 +79,10 @@ func a_star(path []*Node, graph Graph) []Id {
 	return []Id{}
 }
 
+// CompleteRoute takes an incomplete cycle and completes it using A* as
+// well as adjusting values such as length.
 func completeRoute(route Route, graph Graph) Route {
-	lastStretch := a_star(route.Path, graph)
+	lastStretch := aStar(route.Path, graph)
 
 	i := 0
 	node := lastStretch[i]
@@ -100,6 +106,8 @@ func completeRoute(route Route, graph Graph) Route {
 
 }
 
+// GetWithDefault returns a value from a map if a key is present or it
+// returns the supplied default value if the key is not present.
 func getWithDefault(m map[Id]float64, target Id, def float64) float64 {
 	res, ok := m[target]
 
@@ -110,6 +118,7 @@ func getWithDefault(m map[Id]float64, target Id, def float64) float64 {
 	}
 }
 
+// Reverse a list of Ids
 func reverse(l []Id) {
 	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
 		l[i], l[j] = l[j], l[i]

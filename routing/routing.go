@@ -3,12 +3,15 @@
 package routing
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 	"sort"
 )
 
+// TopRoutes returns a slice of routes that are considered the best fit for the
+// supplied criteria such as distance as well as implicit criteria such as No of
+// turns and others. Lots of possible ones are generated and then best 25 are
+// selected and returned.
 func TopRoutes(lat, lon, distance float64, graph Graph) Routes {
 
 	nodes := ClosestNodes(lat, lon, graph, 3)
@@ -37,6 +40,9 @@ func TopRoutes(lat, lon, distance float64, graph Graph) Routes {
 	return top
 }
 
+// AppendRoute is a custom append function for Routes type that keeps the slice
+// ordered as well as attempting to keep all elements sufficiently distinct.
+// AppendRoute does not allow exceeding the capacity of the original slice.
 func appendRoute(route Route, routes Routes) Routes {
 
 	if len(routes) == 0 {
@@ -174,18 +180,6 @@ func pickAlongBearing(target float64, vals map[Id]Edge, exclude Id) (closest Id)
 	}
 
 	return
-}
-
-func (r *Route) ToPolyline() string {
-	str := "var latlngs2 = [\n"
-
-	for _, node := range r.Path {
-		coordpair := fmt.Sprintf("[%f, %f],\n",
-			node.Lat, node.Lon)
-		str += coordpair
-	}
-
-	return str + "]"
 }
 
 // ClosestNode returns n closest node pointers to a given lat and lon coordinates.
