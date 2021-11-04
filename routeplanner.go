@@ -89,7 +89,7 @@ type Request struct {
 func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Header().Set("Access-Control-Allow-Origin", "*") //https://yurachistic1.github.io
+	w.Header().Set("Access-Control-Allow-Origin", "https://yurachistic1.github.io")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
