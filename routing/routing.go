@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"sort"
 )
 
 func TopRoutes(lat, lon, distance float64, graph Graph) Routes {
@@ -14,15 +15,21 @@ func TopRoutes(lat, lon, distance float64, graph Graph) Routes {
 
 	top := make(Routes, 0, 25)
 
-	for i := 0; i < 360; i += 10 {
+	for i := 0; i < 360; i += 15 {
 
-		for j := 0; j < 30; j++ {
+		for j := 0; j < 50; j++ {
 			r1 := createRoute(start, distance, float64(i), graph, Clockwise)
 			top = appendRoute(r1, top)
 			r2 := createRoute(start, distance, float64(i), graph, Anticlockwise)
 			top = appendRoute(r2, top)
 		}
 	}
+
+	for i, r := range top {
+		top[i] = completeRoute(r, graph)
+	}
+
+	sort.Sort(top)
 
 	return top
 }
