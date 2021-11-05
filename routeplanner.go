@@ -18,6 +18,7 @@ const query = `
 ;
 (
 (
+(
   (
 	(
 	  (
@@ -25,7 +26,7 @@ const query = `
 		  (
 			(
 			  (
-				way["highway"~"^(tertiary|unclassified|residential|living_street|pedestrian|track|footway|steps|path|crossing|trailhead|bridleway)$"];
+				way["highway"~"^(secondary|tertiary|unclassified|residential|living_street|pedestrian|track|footway|steps|path|crossing|trailhead|bridleway)$"];
 				way["footway"~"^(sidewalk|crossing)$"];
 				way
 				  ["highway"]
@@ -54,6 +55,9 @@ const query = `
 );
 	- 
 	way["route"="ferry"];
+);
+	- 
+	way["sidewalk"~"^(no|none)$"];
 );
   -
   (
