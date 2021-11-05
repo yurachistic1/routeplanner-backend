@@ -116,16 +116,16 @@ func (routes Routes) Swap(i, j int) {
 func (routes Routes) Less(i, j int) bool {
 
 	turnsI := routes[i].Turns * 30
-	dFromStartI := Haversine(routes[i].Path[0], routes[i].Path[len(routes[i].Path)-1])
-	distanceDiffI := math.Abs(routes[i].DesiredLength - routes[i].Length)
-	repeatsI := (routes[i].RepeatVisits * 2000) / len(routes[i].Path)
+	dFromStartI := Haversine(routes[i].Path[0], routes[i].Path[len(routes[i].Path)-1]) / 3
+	distanceDiffI := math.Abs(routes[i].DesiredLength-routes[i].Length) / 3
+	repeatsI := (routes[i].RepeatVisits * 10000) / len(routes[i].Path)
 
 	iScore := dFromStartI + float64(turnsI) + float64(repeatsI) + distanceDiffI
 
 	turnsJ := routes[j].Turns * 30
-	dFromStartJ := Haversine(routes[j].Path[0], routes[j].Path[len(routes[j].Path)-1])
-	distanceDiffJ := math.Abs(routes[j].DesiredLength - routes[j].Length)
-	repeatsJ := (routes[j].RepeatVisits * 2000) / len(routes[j].Path)
+	dFromStartJ := Haversine(routes[j].Path[0], routes[j].Path[len(routes[j].Path)-1]) / 3
+	distanceDiffJ := math.Abs(routes[j].DesiredLength-routes[j].Length) / 3
+	repeatsJ := (routes[j].RepeatVisits * 10000) / len(routes[j].Path)
 
 	jScore := dFromStartJ + float64(turnsJ) + float64(repeatsJ) + distanceDiffJ
 
