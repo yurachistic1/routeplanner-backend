@@ -25,13 +25,14 @@ const query = `
 		  (
 			(
 			  (
-				way["highway"~"^(primary| secondary|tertiary|unclassified|residential|living_street|pedestrian|track|footway|steps|path|crossing|trailhead|cycleway)$"];
+				way["highway"~"^(tertiary|unclassified|residential|living_street|pedestrian|track|footway|steps|path|crossing|trailhead|bridleway)$"];
 				way["footway"~"^(sidewalk|crossing)$"];
 				way
 				  ["highway"]
 				  ["sidewalk"~"^(both|right|yes|left)$"];
 				way["townpath"="yes"];
 				way["foot"~"^(yes|designated|permissive)$"];
+				way["designation"="public_footpath"];
 );
 			  -
 			  way["access"="customers"];
