@@ -8,6 +8,17 @@ I have been interested in making an app like that for a while since I started ru
 This service is designed to be used as serverless function hosted on google cloud platform with an API gateway to it. 
 
 Map data is retrieved from a public OSM server and this is also the slowest step in the process as it can take a few seconds to download the data. The data is then parsed and routes are calculated. Best 25 results are returned encoded as JSON. 
+
+## Running locally
+Requires Go 1.22 or later.
+
+```sh
+go test ./...
+go run ./cmd/server   # listens on $PORT, default 8080
+curl 'localhost:8080/?lat=51.2665&lon=0.2010&distance=5'
+```
+
+`distance` is in km and must be between 1 and 10.
  
 ## Result 
 The quality of routes does vary a lot. Some areas especially urban areas with a lot of suitable roads and paths can produce great results. Other times the routes might be hard to navigate due to large number of turns or the fact that they keep going back on themselves. This variability was the main reason to return best 25 as it makes it more likely that some of the suggestions are suitable. 

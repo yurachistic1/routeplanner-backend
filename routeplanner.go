@@ -112,14 +112,15 @@ func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 	if req.Distance < 1 || req.Distance > 10 {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		fmt.Fprintf(w, "Error: %s", errors.New("invalid distance"))
+		return
 	}
 
 	// request data from overpass api
 	bbox := overpass.BBox(req.Lat, req.Lon, req.Distance*0.8)
 
-	res, err := overpass.Query(overpass.KumiSys, bbox+query)
+	res, err := overpass.Query(r.Context(), overpass.Main, bbox+query)
 
-	if err != nil || res.Elements == nil {
+	if err != nil {
 		w.WriteHeader(http.StatusServiceUnavailable)
 		fmt.Fprintf(w, "Error: %s", err)
 		return
@@ -141,6 +142,9 @@ func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 // RoutesToResponse takes a routing.Routes object and condenses it to the most
 // essential data needed in the server response.
 func routesToResponce(routes routing.Routes) (res Responce) {
+
+	// encode as [] rather than null when there are no routes
+	res = Responce{}
 
 	for _, val := range routes {
 		route := Route{Path: []CoordPair{}, Distance: val.Length}

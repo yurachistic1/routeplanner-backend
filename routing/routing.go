@@ -198,8 +198,15 @@ func ClosestNodes(lat float64, lon float64, g Graph, n int) (closest []*Node) {
 
 	sort.Sort(pairs)
 
-	for i := 0; i < n; i++ {
-		closest = append(closest, pairs[i*5].n)
+	// spread the picks out to get more varied routes, unless the graph is too
+	// small for that
+	step := 5
+	if len(pairs) < (n-1)*step+1 {
+		step = 1
+	}
+
+	for i := 0; i < n && i*step < len(pairs); i++ {
+		closest = append(closest, pairs[i*step].n)
 	}
 	return closest
 }
