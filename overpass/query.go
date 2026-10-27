@@ -3,24 +3,32 @@
 package overpass
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
-// Public Overpass API instance
+// Public Overpass API instances. Most of the instances used originally have
+// since gone offline, so only the main one is kept.
 const (
-	Main    = "https://lz4.overpass-api.de/api/interpreter"
-	Russian = "https://overpass.openstreetmap.ru/api/interpreter"
-	French  = "https://overpass.openstreetmap.fr/api/interpreter"
-	Swiss   = "https://overpass.osm.ch/api/interpreter"
-	KumiSys = "https://overpass.kumi.systems/api/interpreter"
-	Taiwan  = "https://overpass.nchc.org.tw/api/interpreter"
+	Main = "https://overpass-api.de/api/interpreter"
+)
+
+// UserAgent identifies this client to the Overpass servers, which reject
+// requests with generic or missing user agents.
+const UserAgent = "routeplanner-backend/1.0 (+https://github.com/yurachistic1/routeplanner-backend)"
+
+// Retry settings for when the server is overloaded. Variables so that tests
+// can shorten them.
+var (
+	maxAttempts  = 4
+	initialDelay = 2 * time.Second
 )
 
 // Response represents OSM data in JSON format as specified at
@@ -70,35 +78,75 @@ type Member struct {
 // Query returns a Response value and an error.
 // Api argument has to be of the form: address/api/interpreter.
 // Query argument has to be an overpass QL statement with output format
-//specified as JSON.
-func Query(api string, query string) (response Response, err error) {
+// specified as JSON.
+// Requests rejected because the server is busy are retried with exponential
+// backoff until maxAttempts is reached or ctx is done.
+func Query(ctx context.Context, api string, query string) (response Response, err error) {
 
 	overpassClient := http.Client{
 		Timeout: time.Second * 60,
 	}
 
-	res, err := overpassClient.PostForm(
-		api,
-		url.Values{"data": []string{query}},
+	delay := initialDelay
+
+	for attempt := 1; ; attempt++ {
+		var retry bool
+		response, retry, err = doQuery(ctx, &overpassClient, api, query)
+
+		if err == nil || !retry || attempt == maxAttempts {
+			return
+		}
+
+		select {
+		case <-ctx.Done():
+			return response, ctx.Err()
+		case <-time.After(delay):
+		}
+		delay *= 2
+	}
+}
+
+// doQuery performs a single request and reports whether a failure is worth retrying.
+func doQuery(ctx context.Context, client *http.Client, api, query string) (response Response, retry bool, err error) {
+
+	req, err := http.NewRequestWithContext(
+		ctx, http.MethodPost, api,
+		strings.NewReader(url.Values{"data": []string{query}}.Encode()),
 	)
 
 	if err != nil {
 		return
 	}
 
-	defer res.Body.Close()
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", UserAgent)
 
-	if res.StatusCode != 200 {
-		return response, errors.New("overpass api error")
+	res, err := client.Do(req)
+
+	if err != nil {
+		return response, ctx.Err() == nil, err
 	}
 
-	data, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		switch res.StatusCode {
+		case http.StatusTooManyRequests, http.StatusBadGateway,
+			http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+			retry = true
+		}
+		return response, retry, fmt.Errorf("overpass api error: %s", res.Status)
+	}
+
+	data, err := io.ReadAll(res.Body)
 
 	if err != nil {
 		return
 	}
 
-	json.Unmarshal(data, &response)
+	if err = json.Unmarshal(data, &response); err != nil {
+		err = fmt.Errorf("overpass api returned invalid JSON: %w", err)
+	}
 
 	return
 }
@@ -107,10 +155,10 @@ func Query(api string, query string) (response Response, err error) {
 // It takes coordinates of the center of the bbox and desired side length in km.
 //
 // In a standard Overpass QL program, a bounding box is constructed with
-//two decimal degree coordinate pairs in ISO 6709 standard order and format,
-//and each value is separated with a comma. The values are, in order:
-//southern-most latitude, western-most longitude, northern-most latitude,
-//eastern-most longitude.
+// two decimal degree coordinate pairs in ISO 6709 standard order and format,
+// and each value is separated with a comma. The values are, in order:
+// southern-most latitude, western-most longitude, northern-most latitude,
+// eastern-most longitude.
 func BBox(lat float64, lon float64, side float64) (bbox string) {
 	south := lat - ((side / 2) / 111.32)
 	north := lat + ((side / 2) / 111.32)

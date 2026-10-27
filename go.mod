@@ -1,5 +1,5 @@
 module github.com/yurachistic1/routeplanner-backend
 
-go 1.17
+go 1.22
 
-require github.com/gorilla/schema v1.2.0
+require github.com/gorilla/schema v1.4.1

@@ -29,26 +29,38 @@ func OSMToGraph(res overpass.Response) (graph routing.Graph) {
 	for _, node := range elementsGrouped.Nodes {
 		graph[routing.Id(node.Id)] =
 			&routing.Node{
-				routing.Id(node.Id),
-				node.Lat, node.Lon,
-				[]routing.Id{},
-				make(map[routing.Id]routing.Edge)}
+				Id:       routing.Id(node.Id),
+				Lat:      node.Lat,
+				Lon:      node.Lon,
+				Adjacent: []routing.Id{},
+				Edges:    make(map[routing.Id]routing.Edge)}
 	}
 
 	// connect all the nodes
 	for _, way := range elementsGrouped.Ways {
 		if len(way.Nodes) > 1 {
 			for i := 0; i < len(way.Nodes)-1; i += 1 {
-				var n1 *routing.Node = graph[routing.Id(way.Nodes[i])]
-				var n2 *routing.Node = graph[routing.Id(way.Nodes[i+1])]
+				n1, ok1 := graph[routing.Id(way.Nodes[i])]
+				n2, ok2 := graph[routing.Id(way.Nodes[i+1])]
 
-				graph[n1.Id].Adjacent = append(graph[n1.Id].Adjacent, n2.Id)
-				graph[n1.Id].Edges[n2.Id] =
-					routing.Edge{routing.Haversine(n1, n2), routing.Bearing(n1, n2)}
+				// skip nodes missing from the response, self loops and
+				// segments already added by another way
+				if !ok1 || !ok2 || n1.Id == n2.Id {
+					continue
+				}
+				if _, exists := n1.Edges[n2.Id]; exists {
+					continue
+				}
 
-				graph[n2.Id].Adjacent = append(graph[n2.Id].Adjacent, n1.Id)
-				graph[n2.Id].Edges[n1.Id] =
-					routing.Edge{routing.Haversine(n1, n2), routing.Bearing(n2, n1)}
+				distance := routing.Haversine(n1, n2)
+
+				n1.Adjacent = append(n1.Adjacent, n2.Id)
+				n1.Edges[n2.Id] =
+					routing.Edge{Distance: distance, Bearing: routing.Bearing(n1, n2)}
+
+				n2.Adjacent = append(n2.Adjacent, n1.Id)
+				n2.Edges[n1.Id] =
+					routing.Edge{Distance: distance, Bearing: routing.Bearing(n2, n1)}
 
 			}
 		}
