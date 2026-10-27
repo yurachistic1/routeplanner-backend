@@ -13,7 +13,11 @@ func TestClassify(t *testing.T) {
 		// not for running
 		{"no highway tag", Tags{"foot": "yes"}, Never},
 		{"motorway", Tags{"highway": "motorway"}, Never},
-		{"area", Tags{"highway": "pedestrian", "area": "yes"}, Never},
+		{"square", Tags{"highway": "pedestrian", "area": "yes"}, Preferred},
+		{"footway area", Tags{"highway": "footway", "area": "yes"}, Preferred},
+		{"private square", Tags{"highway": "pedestrian", "area": "yes", "access": "private"}, Never},
+		{"car park", Tags{"highway": "service", "area": "yes", "foot": "yes"}, Never},
+		{"steps area", Tags{"highway": "steps", "area": "yes"}, Never},
 		{"indoor", Tags{"highway": "footway", "indoor": "yes"}, Never},
 		{"indoor no", Tags{"highway": "footway", "indoor": "no"}, Preferred},
 		{"ferry", Tags{"highway": "path", "route": "ferry"}, Never},

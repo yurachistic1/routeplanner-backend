@@ -94,7 +94,9 @@ func Classify(tags Tags) (Class, string) {
 	switch {
 	case highway == "motorway" || highway == "motorway_link":
 		return Never, "motorway"
-	case tags["area"] == "yes":
+	// squares and other pedestrian areas are kept so that paths leading into
+	// them stay connected, routes then run around their edge
+	case tags["area"] == "yes" && !oneOf(highway, "pedestrian", "footway"):
 		return Never, "area"
 	case isSet(tags["indoor"]):
 		return Never, "indoor"
