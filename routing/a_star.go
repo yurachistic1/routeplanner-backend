@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"container/heap"
 	"math"
 )
 
@@ -21,56 +22,67 @@ func reconstructPath(cameFrom map[Id]Id, current Id) (totalPath []Id) {
 	return
 }
 
-// A* search is used to complete the routes into a cycle and is not an optimal implementation
-// lacking the use of a priority queue for the open set. For the purposes of the
-// project it is fast enough.
+// openItem is an entry in the A* open set.
+type openItem struct {
+	id     Id
+	fScore float64
+}
+
+// openSet is a min-heap of openItems ordered by fScore.
+type openSet []openItem
+
+func (s openSet) Len() int           { return len(s) }
+func (s openSet) Less(i, j int) bool { return s[i].fScore < s[j].fScore }
+func (s openSet) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s *openSet) Push(x any)        { *s = append(*s, x.(openItem)) }
+func (s *openSet) Pop() any {
+	old := *s
+	item := old[len(old)-1]
+	*s = old[:len(old)-1]
+	return item
+}
+
+// A* search is used to complete the routes into a cycle. Nodes whose score
+// improves are pushed again rather than updated in place, and stale entries
+// are skipped when popped.
 func aStar(path []*Node, graph Graph) []Id {
 
 	goal := path[0]
 	start := path[len(path)-1]
-	openSet := map[Id]struct{}{start.Id: {}}
+
+	open := &openSet{{start.Id, Haversine(start, goal)}}
+	closed := make(map[Id]bool)
 
 	cameFrom := make(map[Id]Id)
 
 	gScore := map[Id]float64{start.Id: 0}
 
-	fScore := map[Id]float64{start.Id: Haversine(start, goal)}
+	for open.Len() != 0 {
+		current := heap.Pop(open).(openItem).id
 
-	for len(openSet) != 0 {
-		min := math.Inf(1)
-
-		var minNode Id
-
-		for node, score := range fScore {
-			_, ok := openSet[node]
-			if score < min && ok {
-				minNode = node
-				min = score
-			}
-		}
-
-		current := minNode
 		if current == goal.Id {
 			return reconstructPath(cameFrom, current)
 		}
 
-		delete(openSet, current)
+		if closed[current] {
+			continue
+		}
+		closed[current] = true
 
-		neighbours := graph[current].Adjacent
+		for _, id := range graph[current].Adjacent {
+			if closed[id] {
+				continue
+			}
 
-		for _, id := range neighbours {
-			node := graph[id]
 			d := graph[current].Edges[id].Distance
 
-			tentative_gScore := getWithDefault(gScore, current, math.Inf(1)) + d
+			tentative_gScore := gScore[current] + d
 			if tentative_gScore < getWithDefault(gScore, id, math.Inf(1)) {
 				cameFrom[id] = current
 				gScore[id] = tentative_gScore
 
-				h := Haversine(node, goal)
-				fScore[id] = getWithDefault(gScore, id, math.Inf(1)) + h
-
-				openSet[id] = struct{}{}
+				h := Haversine(graph[id], goal)
+				heap.Push(open, openItem{id, tentative_gScore + h})
 			}
 		}
 
