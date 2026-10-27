@@ -104,6 +104,9 @@ func Classify(tags Tags) (Class, string) {
 		return Never, "ferry"
 	case oneOf(tags["foot"], "no", "private", "use_sidepath", "discouraged"):
 		return Never, "foot not allowed"
+	case tags["foot"] == "customers":
+		// paid entry or visitors only, such as cemeteries and gardens
+		return Never, "customers only"
 	case oneOf(tags["access"], "no", "private", "customers") && !footAllowed[tags["foot"]]:
 		return Never, "private access"
 	}

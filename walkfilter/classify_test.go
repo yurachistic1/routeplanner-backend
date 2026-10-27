@@ -26,6 +26,8 @@ func TestClassify(t *testing.T) {
 		{"private", Tags{"highway": "track", "access": "private"}, Never},
 		{"private but foot allowed", Tags{"highway": "track", "access": "private", "foot": "permissive"}, Preferred},
 		{"customers", Tags{"highway": "footway", "access": "customers"}, Never},
+		{"foot customers", Tags{"highway": "footway", "foot": "customers"}, Never},
+		{"foot customers on road", Tags{"highway": "service", "sidewalk": "both", "foot": "customers"}, Never},
 		{"construction", Tags{"highway": "construction"}, Never},
 		{"bus stop platform", Tags{"highway": "platform"}, Never},
 
