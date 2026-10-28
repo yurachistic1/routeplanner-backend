@@ -56,8 +56,8 @@ func TestTilesToGraph(t *testing.T) {
 		}
 	}
 
-	// edges are joined up across the tile boundary and match OSMToGraph:
-	// both directions, with distance and bearing
+	// edges are joined up across the tile boundary: both directions, with
+	// distance and bearing
 	for id, n := range graph {
 		c := coords[int64(id)]
 		if math.Abs(n.Lat-c[0]) > 1e-7 || math.Abs(n.Lon-c[1]) > 1e-7 {

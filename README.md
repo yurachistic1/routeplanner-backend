@@ -22,8 +22,7 @@ curl 'localhost:8080/?lat=51.5313&lon=-0.1570&distance=10'
 
 Map data comes from tiles generated ahead of time from an OSM extract, read
 from `tiledata/` or the directory in `$TILES_DIR`. Where there are no tiles
-the API falls back to the public Overpass API, which is slow, so it's limited
-to 10km there.
+the API responds with 422.
 
 To generate tiles, download an extract from https://download.geofabrik.de
 and run the generator from its own directory:

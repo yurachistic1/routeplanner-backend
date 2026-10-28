@@ -3,7 +3,7 @@
 // Usage:
 //
 //	go run ./cmd/server
-//	curl 'localhost:8080/?lat=51.2665&lon=0.2010&distance=5'
+//	curl 'localhost:8080/?lat=51.5313&lon=-0.1570&distance=5'
 package main
 
 import (
