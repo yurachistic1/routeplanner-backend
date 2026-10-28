@@ -1,0 +1,43 @@
+package routeplanner
+
+import (
+	"github.com/yurachistic1/routeplanner-backend/routing"
+	"github.com/yurachistic1/routeplanner-backend/tiles"
+)
+
+// TilesToGraph takes tiles and returns a graph of the edges with at least one
+// node inside the bounding box, the same area an Overpass query returns, and
+// without dead ends.
+func TilesToGraph(ts []*tiles.Tile, south, west, north, east float64) (graph routing.Graph) {
+
+	graph = make(routing.Graph)
+	coords, edges := tiles.Merge(ts)
+
+	inside := func(c [2]float64) bool {
+		return c[0] >= south && c[0] <= north && c[1] >= west && c[1] <= east
+	}
+
+	node := func(id int64) *routing.Node {
+		n, ok := graph[routing.Id(id)]
+		if !ok {
+			n = &routing.Node{
+				Id:       routing.Id(id),
+				Lat:      coords[id][0],
+				Lon:      coords[id][1],
+				Adjacent: []routing.Id{},
+				Edges:    make(map[routing.Id]routing.Edge)}
+			graph[n.Id] = n
+		}
+		return n
+	}
+
+	for _, e := range edges {
+		if e.A == e.B || (!inside(coords[e.A]) && !inside(coords[e.B])) {
+			continue
+		}
+		connect(node(e.A), node(e.B))
+	}
+
+	graph.RemoveDeadEnds()
+	return graph
+}

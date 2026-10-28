@@ -15,10 +15,26 @@ Requires Go 1.22 or later.
 ```sh
 go test ./...
 go run ./cmd/server   # listens on $PORT, default 8080
-curl 'localhost:8080/?lat=51.2665&lon=0.2010&distance=5'
+curl 'localhost:8080/?lat=51.5313&lon=-0.1570&distance=10'
 ```
 
-`distance` is in km and must be between 1 and 10.
+`distance` is in km and must be between 1 and 35.
+
+Map data comes from tiles generated ahead of time from an OSM extract, read
+from `tiledata/` or the directory in `$TILES_DIR`. Where there are no tiles
+the API falls back to the public Overpass API, which is slow, so it's limited
+to 10km there.
+
+To generate tiles, download an extract from https://download.geofabrik.de
+and run the generator from its own directory:
+
+```sh
+cd cmd/tilegen
+CGO_ENABLED=0 go run . -in path/to/greater-london-latest.osm.pbf -out ../../tiledata
+```
+
+`CGO_ENABLED=0` lets the OSM reading library build without `pkg-config`.
+Greater London takes a few seconds and makes about 24MB of tiles.
  
 ## Result 
 The quality of routes does vary a lot. Some areas especially urban areas with a lot of suitable roads and paths can produce great results. Other times the routes might be hard to navigate due to large number of turns or the fact that they keep going back on themselves. This variability was the main reason to return best 25 as it makes it more likely that some of the suggestions are suitable. 

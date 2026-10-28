@@ -4,13 +4,36 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/schema"
 
 	"github.com/yurachistic1/routeplanner-backend/overpass"
 	"github.com/yurachistic1/routeplanner-backend/routing"
+	"github.com/yurachistic1/routeplanner-backend/tiles"
 )
+
+// Route distances in km. Routes can be up to MaxDistance where tiles have
+// been generated, elsewhere map data comes from Overpass, which is too slow
+// for more than OverpassMaxDistance.
+const (
+	MinDistance         = 1
+	MaxDistance         = 35
+	OverpassMaxDistance = 10
+)
+
+// tilesDir is the directory of tiles written by cmd/tilegen, set with the
+// TILES_DIR environment variable.
+var tilesDir = func() string {
+	if dir := os.Getenv("TILES_DIR"); dir != "" {
+		return dir
+	}
+	return "tiledata"
+}()
+
+var errNoTiles = fmt.Errorf("distances over %dkm are only available where tiles have been generated", OverpassMaxDistance)
 
 const query = `
 [out:json]
@@ -109,26 +132,32 @@ func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// validate distance
-	if req.Distance < 1 || req.Distance > 10 {
+	if req.Distance < MinDistance || req.Distance > MaxDistance {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		fmt.Fprintf(w, "Error: %s", errors.New("invalid distance"))
 		return
 	}
 
-	// request data from overpass api
-	bbox := overpass.BBox(req.Lat, req.Lon, req.Distance*0.8)
+	// load map data for the area the routes can reach
+	graph, source, err := loadGraph(r, req.Lat, req.Lon, req.Distance)
 
-	res, err := overpass.Query(r.Context(), overpass.Main, bbox+query)
-
-	if err != nil {
+	switch {
+	case errors.Is(err, errNoTiles):
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		fmt.Fprintf(w, "Error: %s", err)
+		return
+	case errors.Is(err, errOverpass):
 		w.WriteHeader(http.StatusServiceUnavailable)
 		fmt.Fprintf(w, "Error: %s", err)
 		return
+	case err != nil:
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "Error: %s", err)
+		return
 	}
+	w.Header().Set("X-Data-Source", source)
 
-	// process and calculate routes
-	graph := OSMToGraph(res)
-
+	// calculate routes
 	routes := routing.TopRoutes(req.Lat, req.Lon, req.Distance*1000, graph)
 
 	// Send response back to client as JSON
@@ -137,6 +166,62 @@ func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(&response); err != nil {
 		return
 	}
+}
+
+var errOverpass = errors.New("overpass api")
+
+// coverage is how close in metres to the start the tiles must have a node for
+// them to be used. Starts just outside a generated region can overlap tiles
+// at its edge that have nothing near them.
+const coverage = 1000
+
+// loadGraph returns the graph for routes of distance km from the
+// coordinates, and where its data came from: "tiles" when tiles cover the
+// start, otherwise "overpass".
+func loadGraph(r *http.Request, lat, lon, distance float64) (routing.Graph, string, error) {
+	side := distance * 0.8
+	south, west, north, east := boundsAround(lat, lon, side)
+
+	ts, err := tiles.Load(tilesDir, tiles.Covering(south, west, north, east, tiles.Zoom))
+	if err != nil {
+		return nil, "", err
+	}
+	if len(ts) > 0 {
+		graph := TilesToGraph(ts, south, west, north, east)
+		if hasNodeNear(graph, lat, lon, coverage) {
+			return graph, "tiles", nil
+		}
+	}
+
+	if distance > OverpassMaxDistance {
+		return nil, "", errNoTiles
+	}
+
+	res, err := overpass.Query(r.Context(), overpass.Main, overpass.BBox(lat, lon, side)+query)
+	if err != nil {
+		return nil, "", fmt.Errorf("%w: %w", errOverpass, err)
+	}
+	return OSMToGraph(res), "overpass", nil
+}
+
+// hasNodeNear reports whether the graph has a node within metres of the
+// coordinates.
+func hasNodeNear(graph routing.Graph, lat, lon, metres float64) bool {
+	target := routing.Node{Lat: lat, Lon: lon}
+	for _, n := range graph {
+		if routing.Haversine(&target, n) <= metres {
+			return true
+		}
+	}
+	return false
+}
+
+// boundsAround returns a box with sides of side km centred on the
+// coordinates, the same box overpass.BBox describes.
+func boundsAround(lat, lon, side float64) (south, west, north, east float64) {
+	dLat := (side / 2) / 111.32
+	dLon := (side / 2) / (111.32 * math.Cos(lat*(math.Pi/180)))
+	return lat - dLat, lon - dLon, lat + dLat, lon + dLon
 }
 
 // RoutesToResponse takes a routing.Routes object and condenses it to the most
