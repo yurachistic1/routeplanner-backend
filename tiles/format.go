@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -139,6 +140,26 @@ func Write(dir string, t *Tile) (err error) {
 		return err
 	}
 	return w.Flush()
+}
+
+// Load reads the tiles for the keys from dir. Keys without a tile, such as
+// outside the generated region, are skipped, so the result can be shorter
+// than keys or empty.
+func Load(dir string, keys []Key) ([]*Tile, error) {
+	var tiles []*Tile
+
+	for _, k := range keys {
+		t, err := Read(dir, k)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		tiles = append(tiles, t)
+	}
+
+	return tiles, nil
 }
 
 // Read loads the tile k from dir. It returns an error satisfying

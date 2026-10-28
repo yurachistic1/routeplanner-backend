@@ -7,6 +7,8 @@ import (
 	"errors"
 	"io/fs"
 	"math"
+	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
@@ -140,6 +142,33 @@ func TestWriteRead(t *testing.T) {
 
 	if _, err := Read(dir, Key{12, 1, 1}); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("Read of a missing tile returned %v, want fs.ErrNotExist", err)
+	}
+}
+
+func TestLoad(t *testing.T) {
+	coords, edges := testNetwork()
+	dir := t.TempDir()
+
+	written := Split(edges, coords, Zoom)
+	for _, tile := range written {
+		if err := Write(dir, tile); err != nil {
+			t.Fatal(err)
+		}
+	}
+	west, east := written[0].Key, written[1].Key
+
+	got, err := Load(dir, []Key{west, {12, 1, 1}, east})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || got[0].Key != west || got[1].Key != east {
+		t.Errorf("Load returned %d tiles, want the 2 that exist, in key order", len(got))
+	}
+
+	// a corrupt tile is an error, not skipped
+	os.WriteFile(filepath.Join(dir, east.Path()), []byte("not a tile"), 0o644)
+	if _, err := Load(dir, []Key{east}); err == nil {
+		t.Error("Load of a corrupt tile returned no error")
 	}
 }
 
