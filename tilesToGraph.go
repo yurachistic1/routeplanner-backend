@@ -6,8 +6,7 @@ import (
 )
 
 // TilesToGraph takes tiles and returns a graph of the edges with at least one
-// node inside the bounding box, the same area an Overpass query returns, and
-// without dead ends.
+// node inside the bounding box, and without dead ends.
 func TilesToGraph(ts []*tiles.Tile, south, west, north, east float64) (graph routing.Graph) {
 
 	graph = make(routing.Graph)
@@ -40,4 +39,22 @@ func TilesToGraph(ts []*tiles.Tile, south, west, north, east float64) (graph rou
 
 	graph.RemoveDeadEnds()
 	return graph
+}
+
+// connect adds edges both ways between two nodes, unless they are already
+// connected by another way.
+func connect(n1, n2 *routing.Node) {
+	if _, exists := n1.Edges[n2.Id]; exists {
+		return
+	}
+
+	distance := routing.Haversine(n1, n2)
+
+	n1.Adjacent = append(n1.Adjacent, n2.Id)
+	n1.Edges[n2.Id] =
+		routing.Edge{Distance: distance, Bearing: routing.Bearing(n1, n2)}
+
+	n2.Adjacent = append(n2.Adjacent, n1.Id)
+	n2.Edges[n1.Id] =
+		routing.Edge{Distance: distance, Bearing: routing.Bearing(n2, n1)}
 }

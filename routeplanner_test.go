@@ -36,9 +36,6 @@ func TestRoutePlannerAPI(t *testing.T) {
 		if w.Code != http.StatusOK {
 			t.Fatalf("status %d, want 200: %s", w.Code, w.Body)
 		}
-		if got := w.Header().Get("X-Data-Source"); got != "tiles" {
-			t.Errorf("X-Data-Source == %q, want tiles", got)
-		}
 
 		var routes Responce
 		if err := json.NewDecoder(w.Body).Decode(&routes); err != nil {
@@ -73,15 +70,15 @@ func TestRoutePlannerAPI(t *testing.T) {
 		}
 	})
 
-	t.Run("long distance without tiles", func(t *testing.T) {
-		// Manchester has no tiles, and 15km is too far for Overpass
-		w := request("lat=53.4808&lon=-2.2426&distance=15")
+	t.Run("no tiles", func(t *testing.T) {
+		// Manchester has no tiles, even for a short route
+		w := request("lat=53.4808&lon=-2.2426&distance=2")
 
 		if w.Code != http.StatusUnprocessableEntity {
 			t.Errorf("status %d, want 422", w.Code)
 		}
-		if !strings.Contains(w.Body.String(), "tiles") {
-			t.Errorf("error %q does not explain that tiles are needed", w.Body)
+		if !strings.Contains(w.Body.String(), "no map data") {
+			t.Errorf("error %q does not explain that there is no map data", w.Body)
 		}
 	})
 }
