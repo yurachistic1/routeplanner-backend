@@ -94,9 +94,9 @@ func Classify(tags Tags) (Class, string) {
 	switch {
 	case highway == "motorway" || highway == "motorway_link":
 		return Never, "motorway"
-	// squares and other pedestrian areas are kept so that paths leading into
-	// them stay connected, routes then run around their edge
-	case tags["area"] == "yes" && !oneOf(highway, "pedestrian", "footway"):
+	// areas are outlines of a space, routing along them means running
+	// around its edge
+	case tags["area"] == "yes":
 		return Never, "area"
 	case isSet(tags["indoor"]):
 		return Never, "indoor"
@@ -131,10 +131,9 @@ func Classify(tags Tags) (Class, string) {
 	case streets[highway]:
 		return Preferred, "quiet street"
 	case highway == "service":
-		if footAllowed[tags["foot"]] || sidewalkOf(tags) == yes {
-			return OK, "service road open to foot"
-		}
-		return Never, "service road"
+		// often short links between paths, unsuitable ones are caught by
+		// the access rules, barriers or dead end removal
+		return OK, "service road"
 	}
 
 	road, ok := roads[highway]
