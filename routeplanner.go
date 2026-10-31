@@ -46,11 +46,20 @@ type Request struct {
 	Distance float64 `schema:"distance,required"`
 }
 
+// allowedOrigin returns the origin allowed to call the API from a browser.
+// ALLOWED_ORIGIN overrides it for local development, e.g. http://localhost:5173.
+func allowedOrigin() string {
+	if o := os.Getenv("ALLOWED_ORIGIN"); o != "" {
+		return o
+	}
+	return "https://yurachistic1.github.io"
+}
+
 // Handler function that is invoked by GCP.
 func RoutePlannerAPI(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.Header().Set("Access-Control-Allow-Origin", "https://yurachistic1.github.io")
+	w.Header().Set("Access-Control-Allow-Origin", allowedOrigin())
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
